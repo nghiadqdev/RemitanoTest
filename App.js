@@ -33,11 +33,11 @@ const App: () => Node = () => {
   const [isWebShow, setWebShow] = useState(-1)
   const [errMessage, setErrMessage] = useState('')
   const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    backgroundColor: Colors.lighter,
     display: 'flex',
   };
   const refWeb = useRef(null)
-
+  const textInputRef = useRef(null)
   //action
   function validURL(str) {
     var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
@@ -50,11 +50,14 @@ const App: () => Node = () => {
   }
   const handleChangeText = text => {
     seturlWeb(text)
+    setWebShow(-1)
+    setErrMessage('')
   }
   const handleSearch = () => {
     if (validURL(urlWeb)){
-      setWebShow(0)
+      setWebShow(urLSubmit != urlWeb ? 0 : 1)
       setUrlSubmit(urlWeb)
+      textInputRef.current.blur()
     }
     else {
       setWebShow(-1)
@@ -70,6 +73,7 @@ const App: () => Node = () => {
     <View style={{ marginVertical: 20, width, alignItems: 'center'}}>
       <Text style={styles.txtTitle}>{'Enter link web view here'}</Text>
       <TextInput
+        ref={textInputRef}
         keyboardType={'url'}
         returnKeyType={'send'}
         onSubmitEditing={handleSearch}
@@ -79,35 +83,34 @@ const App: () => Node = () => {
       <TouchableOpacity onPress={handleSearch} style={styles.viewSubmit}>
         <Text style={styles.txtSubmit}>{'Submit'}</Text>
       </TouchableOpacity>
-      <Text style={{color: 'red', fontSize: 12}}>{errMessage}</Text>
+      {errMessage !== '' && <Text style={{color: 'red', fontSize: 12}}>{errMessage}</Text>}
     </View>
-  ), [urlWeb, errMessage])
+  ), [urlWeb, errMessage, urLSubmit])
 
-  const webViewScreen = () => {
+  const webViewScreen = useCallback(() => {
     if (isWebShow > -1)
     return(
-      <View style={{flex: 1, width, justifyContent: 'center', alignItems: 'center'}}>
+      <View style={{flex: 1, width}}>
         <ScrollView
-          refreshControl={<RefreshControl refreshing={false} onRefresh={onRefreshing} />}
-          contentContainerStyle={{flex: 1}}>
-          {isWebShow === 0 ? <ActivityIndicator size={'large'} /> :
-          <WebView
-            ref={refWeb}
-            style={{width, flex: 1 }}
-            source={{  uri: urLSubmit }}
-            onLoadEnd={() => setWebShow(1)}
-          />
-          }
+          refreshControl={<RefreshControl refreshing={false} onRefresh={onRefreshing} />}>
+          {isWebShow === 0 && <ActivityIndicator size={'large'} />}
+            <WebView
+              ref={refWeb}
+              style={{width, minHeight: height }}
+              source={{ uri: urLSubmit }}
+              onLoadEnd={() => setWebShow(1)}
+              onError={(err) => setErrMessage('Page error')}
+            />
         </ScrollView>
       </View>
     )
-  }
+  }, [urLSubmit, isWebShow])
   return (
     <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={'light-content'} />
         <View
           style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
+            backgroundColor: Colors.white,
             display: 'flex',
             width, height,
             justifyContent: 'center',
